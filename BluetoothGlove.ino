@@ -31,7 +31,7 @@
 
 // Pin Mapping for IST Glove: MOT0 - 3 MOT1 - 8 MOT2 - 12 MOT3 - 23
 int motorpins[6] = {
-  3,8,12,23,19,14 }; // motor driver pins 0 through 5, ideally spaced 60 degrees apart 
+  0,12,10,6,5,3 }; // motor driver pins 0 through 5, ideally spaced 60 degrees apart 
 
 /* Pin Mapping for Dev Glove: MOT0 - 3 MOT1 - 8 MOT2 - 12 MOT4 - 19
 int motorpins[6] = {
