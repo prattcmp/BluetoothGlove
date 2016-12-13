@@ -55,12 +55,12 @@ word duration = 0;
 
 void setup(void)
 {
-  while (!Serial); // required for Flora & Micro
-  delay(500);
-
-  boolean success;
-
   Serial.begin(115200);
+
+  if (!ble.begin(VERBOSE_MODE))
+  {
+    error(F("Couldn't find Bluefruit, make sure it's in CoMmanD mode & check wiring?"));
+  }
 
   /* Disable command echo from Bluefruit */
   ble.verbose(false);
@@ -129,7 +129,7 @@ void runMotor() {
       digitalWriteAll(HIGH);
     }
     else {
-      digitalWrite(motor, HIGH);
+      digitalWrite(motorpins[motor], HIGH);
     }
     delayMicroseconds(cycle_time);
 
@@ -143,7 +143,7 @@ void runMotor() {
       digitalWriteAll(LOW);
     }
     else {
-      digitalWrite(motor, LOW);
+      digitalWrite(motorpins[motor], LOW);
     }
 
     // This algorithm breaks up the delays into chunks to keep checking
@@ -169,7 +169,7 @@ void loop(void)
 {
   // Check our motor characteristic to see if we need to run a motor
   checkCharacteristic();
-  
+
   // Make sure every motor is off
   digitalWriteAll(LOW);
 }

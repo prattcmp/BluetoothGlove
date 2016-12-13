@@ -4,7 +4,7 @@ var sleep = require('sleep');
 // We need this for sleep to work
 require('events').EventEmitter.prototype._maxListeners = 1000;
 
-var peripheralId = '7bece67fe0a243c28e5260297e422afb';
+var peripheralName = 'HapticGloveB';
 var motorServiceUuid = '15db5d2050d44370a439754e7182cb54';
 var motorCharacteristicUuid = '15db5d2150d44370a439754e7182cb54';
 
@@ -27,7 +27,7 @@ var motorService = null;
 var motorCharacteristic = null;
  
 noble.on('discover', function(peripheral) {
-	if (peripheral.id === peripheralId) {
+	if (peripheral.advertisement.localName === peripheralName) {
 	// we found our peripheral, stop scanning
 	noble.stopScanning();
 	
@@ -91,6 +91,7 @@ function runTests() {
 	console.log("Running each motor...");
 	for (i = 1; i < 7; i++) {
 		runMotor(i, 100, 100);
+		console.log("Motor " + i);
 		sleep.sleep(2);
 	}
 
