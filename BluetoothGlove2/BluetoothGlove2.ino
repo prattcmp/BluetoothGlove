@@ -49,18 +49,16 @@ void error(const __FlashStringHelper*err) {
   while (1);
 }
 
-uint8_t motor = 0;
+uint8_t motors = 0;
 uint8_t intensity = 0;
 word duration = 0;
 
 void setup(void)
 {
-  Serial.begin(115200);
+  while (!Serial); // required for Flora & Micro
+  delay(500);
 
-  if (!ble.begin(VERBOSE_MODE))
-  {
-    error(F("Couldn't find Bluefruit, make sure it's in CoMmanD mode & check wiring?"));
-  }
+  Serial.begin(115200);
 
   /* Disable command echo from Bluefruit */
   ble.verbose(false);
@@ -85,7 +83,7 @@ void parsePacket(String packet) {
   const char* intensityStr = intensityBuffer.c_str();
   const char* durationStr = durationBuffer.c_str();
   
-  motor = constrain(strtoul(motorStr, NULL, 16), 0, 7);
+  motors = constrain(strtoul(motorStr, NULL, 16), 0, 7);
   intensity = constrain(strtoul(intensityStr, NULL, 16), 0, 100);
   intensity = map(intensity, 0, 100, INTENSITY_MIN, INTENSITY_MAX);
   duration = constrain(strtoul(durationStr, NULL, 16), 1, 100);
@@ -103,13 +101,9 @@ void checkCharacteristic() {
 
   // Parse our data
   parsePacket(String(ble.buffer));
-
-  if (motor != 0) {
-    runMotor();
-  }
 }
 
-void runMotor() {
+void runMotors() {
   // Reset the characteristic
   String command = "AT+GATTCHAR=1,0x000000";
   ble.println(command);
@@ -125,25 +119,26 @@ void runMotor() {
   // Keep running until the full duration has passed
   while(start_time + duration > micros()) { 
     // Pulse the motors based on our duty cycle
-    if(motor == 7) {
-      digitalWriteAll(HIGH);
+    for(int i = 1;i <= 6;i++) {
+      unsigned int live = (motors >> i) & 1;
+      if(live == 1) {
+        digitalWrite(i, HIGH);
+      }
     }
-    else {
-      digitalWrite(motorpins[motor], HIGH);
-    }
+
     delayMicroseconds(cycle_time);
 
     // If there's another byte waiting, read it right away
-    if(Serial.available() > 0) {
+    checkCharacteristic();
+    if(motors != 0) {
       break;
     }
 
-    // Pulse the motors based on our duty cycle
-    if(motor == 7) {
-      digitalWriteAll(LOW);
-    }
-    else {
-      digitalWrite(motorpins[motor], LOW);
+    for(int i = 1;i <= 6;i++) {
+      unsigned int live = (motors >> i) & 1;
+      if(live == 1) {
+        digitalWrite(i, LOW);
+      }
     }
 
     // This algorithm breaks up the delays into chunks to keep checking
@@ -170,6 +165,10 @@ void loop(void)
   // Check our motor characteristic to see if we need to run a motor
   checkCharacteristic();
 
+  if (motors != 0) {
+    runMotors();
+  }
+  
   // Make sure every motor is off
   digitalWriteAll(LOW);
 }
