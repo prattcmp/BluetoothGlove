@@ -19,6 +19,7 @@ noble.on('stateChange', function(state) {
 		noble.startScanning();
 	}
 	else {
+		console.log('bluetooth disabled');
 		noble.stopScanning();
 	}
 })
