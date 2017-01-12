@@ -29,6 +29,8 @@
 #define INTENSITY_MIN 25
 #define INTENSITY_MAX 100
 
+#define LED_PIN 13
+
 // Pin Mapping for IST Glove: MOT0 - 3 MOT1 - 8 MOT2 - 12 MOT3 - 23
 int motorpins[6] = {
   0,12,10,6,5,3 }; // motor driver pins 0 through 5, ideally spaced 60 degrees apart 
@@ -65,6 +67,8 @@ void setup(void)
   /* Disable command echo from Bluefruit */
   ble.verbose(false);
   ble.echo(false);
+
+  pinMode(LED_PIN, OUTPUT);
 }
 
 // Write to every motor
@@ -114,6 +118,8 @@ void runMotor() {
   String command = "AT+GATTCHAR=1,0x000000";
   ble.println(command);
   
+  Serial.print("Running motor: "); Serial.println(motor);
+  
   unsigned long start_time = micros();
   
   // Calculate length of the duty cycle
@@ -121,7 +127,9 @@ void runMotor() {
 
   // Make sure every motor is off when running a new motor
   digitalWriteAll(LOW);
-
+  
+  digitalWrite(LED_PIN, HIGH);
+  
   // Keep running until the full duration has passed
   while(start_time + duration > micros()) { 
     // Pulse the motors based on our duty cycle
@@ -172,4 +180,6 @@ void loop(void)
 
   // Make sure every motor is off
   digitalWriteAll(LOW);
+  
+  digitalWrite(LED_PIN, LOW);
 }
