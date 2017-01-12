@@ -19,7 +19,6 @@ noble.on('stateChange', function(state) {
 		noble.startScanning();
 	}
 	else {
-		console.log('bluetooth disabled');
 		noble.stopScanning();
 	}
 })
@@ -28,6 +27,7 @@ var motorService = null;
 var motorCharacteristic = null;
  
 noble.on('discover', function(peripheral) {
+	console.log(peripheral.advertisement.localName);
 	if (peripheral.advertisement.localName === peripheralName) {
 	// we found our peripheral, stop scanning
 	noble.stopScanning();
@@ -90,7 +90,7 @@ function runTests() {
 	
 	// Run each motor
 	console.log("Running each motor...");
-	for (i = 1; i < 7; i++) {
+	for (i = 1; i < 6; i++) {
 		runMotor(i, 100, 100);
 		console.log("Motor " + i);
 		sleep.sleep(2);

@@ -51,30 +51,45 @@ void error(const __FlashStringHelper*err) {
   while (1);
 }
 
+int32_t gattServiceId;
+int32_t gattCharId;
 uint8_t motor = 0;
 uint8_t intensity = 0;
-word duration = 0;
+long duration = 0;
 
-void setup(void)
-{
+void setup(void) {
   Serial.begin(115200);
 
+  for(int i = 0; i < 5; i++) {
+    pinMode(motorpins[i], OUTPUT);
+  }
+  digitalWriteAll(LOW);
+  
+  pinMode(LED_PIN, OUTPUT);
+  
   if (!ble.begin(VERBOSE_MODE))
   {
     error(F("Couldn't find Bluefruit, make sure it's in CoMmanD mode & check wiring?"));
   }
 
+  /* Perform a factory reset to make sure everything is in a known state */
+  Serial.println(F("Performing a factory reset: "));
+  ble.factoryReset();
+  
+  ble.sendCommandCheckOK(F("AT+GAPDEVNAME=HapticGloveB"));
+  ble.sendCommandWithIntReply( F("AT+GATTADDSERVICE=UUID128=15-DB-5D-20-50-D4-43-70-A4-39-75-4E-71-82-CB-54"), &gattServiceId);  
+  ble.sendCommandWithIntReply( F("AT+GATTADDCHAR=UUID128=15-DB-5D-21-50-D4-43-70-A4-39-75-4E-71-82-CB-54,PROPERTIES=0x08,MIN_LEN=1, MAX_LEN=3, VALUE=0x000000"), &gattCharId);
+  ble.reset();
+
   /* Disable command echo from Bluefruit */
   ble.verbose(false);
   ble.echo(false);
-
-  pinMode(LED_PIN, OUTPUT);
+    
 }
 
 // Write to every motor
-void digitalWriteAll(uint8_t state)
-{
-  for (int m = 0; m < 5; m++)
+void digitalWriteAll(uint8_t state) {
+  for (int m = 1; m < 6; m++)
   {
     digitalWrite(motorpins[m], state);
   }
@@ -96,7 +111,7 @@ void parsePacket(String packet) {
   duration *= 10 * 1000;
 }
 
-void checkCharacteristic() {
+bool checkCharacteristic() {
   // Read the buffer
   ble.println("AT+GATTCHAR=1");
   ble.readline();
@@ -109,7 +124,7 @@ void checkCharacteristic() {
   parsePacket(String(ble.buffer));
 
   if (motor != 0) {
-    runMotor();
+    return true;
   }
 }
 
@@ -119,6 +134,8 @@ void runMotor() {
   ble.println(command);
   
   Serial.print("Running motor: "); Serial.println(motor);
+  Serial.print("    Duration: "); Serial.println(duration);
+  Serial.print("    Intensity: "); Serial.println(intensity);
   
   unsigned long start_time = micros();
   
@@ -142,7 +159,7 @@ void runMotor() {
     delayMicroseconds(cycle_time);
 
     // If there's another byte waiting, read it right away
-    if(Serial.available() > 0) {
+    if(checkCharacteristic()) {
       break;
     }
 
@@ -173,10 +190,16 @@ void runMotor() {
   }
 }
 
-void loop(void)
-{
-  // Check our motor characteristic to see if we need to run a motor
+void loop(void) {
+  motor = 0;
+  intensity = 0;
+  duration = 0;
+
   checkCharacteristic();
+  // Check our motor characteristic to see if we need to run a motor
+  if (motor != 0) {
+    runMotor();
+  }
 
   // Make sure every motor is off
   digitalWriteAll(LOW);
