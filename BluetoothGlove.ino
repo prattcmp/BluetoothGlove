@@ -13,7 +13,6 @@
 
 #include <Arduino.h>
 #include <SPI.h>
-#include <EEPROM.h>
 
 #include "Adafruit_BLE.h"
 #include "Adafruit_BluefruitLE_SPI.h"
@@ -40,15 +39,6 @@ Adafruit_BluefruitLE_SPI ble(BLUEFRUIT_SPI_CS, BLUEFRUIT_SPI_IRQ, BLUEFRUIT_SPI_
 
 Adafruit_BLEGatt gatt(ble);
 
-<<<<<<< HEAD
-=======
-// A small helper
-void error(const __FlashStringHelper*err) {
-  Serial.println(err);
-  while (1);
-}
-
->>>>>>> origin/master
 int32_t gattServiceId;
 int32_t gattCharId;
 uint8_t motor = 0;
@@ -58,51 +48,24 @@ long duration = 0;
 void setup(void) {
   Serial.begin(115200);
 
-<<<<<<< HEAD
   for(int i = 0; i < 7; i++) {
-=======
-  for(int i = 0; i < 5; i++) {
->>>>>>> origin/master
     pinMode(motorpins[i], OUTPUT);
   }
   digitalWriteAll(LOW);
   
-<<<<<<< HEAD
-=======
-  pinMode(LED_PIN, OUTPUT);
-  
->>>>>>> origin/master
   if (!ble.begin(VERBOSE_MODE))
   {
     Serial.println("Couldn't find Bluefruit, make sure it's in CoMmanD mode & check wiring?");
   }
 
-  /* Perform a factory reset to make sure everything is in a known state */
-  Serial.println(F("Performing a factory reset: "));
-  ble.factoryReset();
-  
-  ble.sendCommandCheckOK(F("AT+GAPDEVNAME=HapticGloveB"));
-  ble.sendCommandWithIntReply( F("AT+GATTADDSERVICE=UUID128=15-DB-5D-20-50-D4-43-70-A4-39-75-4E-71-82-CB-54"), &gattServiceId);  
-  ble.sendCommandWithIntReply( F("AT+GATTADDCHAR=UUID128=15-DB-5D-21-50-D4-43-70-A4-39-75-4E-71-82-CB-54,PROPERTIES=0x08,MIN_LEN=1, MAX_LEN=3, VALUE=0x000000"), &gattCharId);
-  ble.reset();
-
   /* Disable command echo from Bluefruit */
   ble.verbose(false);
-<<<<<<< HEAD
   ble.echo(false); 
-=======
-  ble.echo(false);
-    
->>>>>>> origin/master
 }
 
 // Write to every motor
 void digitalWriteAll(uint8_t state) {
-<<<<<<< HEAD
   for (int m = 1; m < 7; m++)
-=======
-  for (int m = 1; m < 6; m++)
->>>>>>> origin/master
   {
     digitalWrite(motorpins[m], state);
   }
