@@ -27,7 +27,7 @@
 // Play with these (INTENSITY_SCALE has minimum of 3)
 #define INTENSITY_SCALE 70
 #define INTENSITY_MIN 25
-#define INTENSITY_MAX 100
+#define INTENSITY_MAX 64
 
 #define LEFT 1
 #define RIGHT 2
@@ -36,7 +36,7 @@
 #define STEP_FORWARD 5
 #define STEP_BACKWARD 6
 #define STOP 7
-#define REACH_FORWARD 8
+#define REACH_FORWARD 0
 
 // Pin Mapping for IST Glove: MOT0 - 3 MOT1 - 8 MOT2 - 12 MOT3 - 23
 int motorpins[7] = {
@@ -103,17 +103,15 @@ void digitalWriteAll(uint8_t state) {
 void parsePacket(String packet) {
   String motorBuffer = packet.substring(0, 2);
   String intensityBuffer = packet.substring(3, 5);
-  String durationBuffer = packet.substring(6); 
 
   const char* motorStr = motorBuffer.c_str();
   const char* intensityStr = intensityBuffer.c_str();
-  const char* durationStr = durationBuffer.c_str();
   
   motor = constrain(strtoul(motorStr, NULL, 16), 0, 7);
   intensity = constrain(strtoul(intensityStr, NULL, 16), 0, 100);
+  if (intensity != 0) { Serial.print("Int1: "); Serial.println(intensity); }
   intensity = map(intensity, 0, 100, INTENSITY_MIN, INTENSITY_MAX);
-  duration = constrain(strtoul(durationStr, NULL, 16), 1, 100);
-  duration *= 10 * 1000;
+  if (intensity != 25) { Serial.print("Int2: "); Serial.println(intensity); }
 }
 
 bool checkCharacteristic() {
@@ -139,9 +137,9 @@ void runMotor() {
   ble.println(command);
 
   duration = 1000000;
+  intensity = 64;
   
   Serial.print("Running motor: "); Serial.println(motor);
-  Serial.print("    Duration: "); Serial.println(duration);
   Serial.print("    Intensity: "); Serial.println(intensity);
   
   unsigned long start_time = micros();
@@ -177,22 +175,7 @@ void runMotor() {
       digitalWrite(motorpins[motor], LOW);
     }
 
-    // This algorithm breaks up the delays into chunks to keep checking
-    // for the right time to stop the loop.
-    // The shorter our delay, the less we have to break up the delays
-    int iterations = map(intensity, INTENSITY_MIN, INTENSITY_MAX, 
-                         INTENSITY_MIN, INTENSITY_MAX * 2);
-    for(uint8_t i = 0; i < iterations; i++)
-    {
-      delayMicroseconds(((100 * INTENSITY_SCALE) - cycle_time) / iterations);
-      
-      if(start_time + duration < micros()) {
-        break;
-      }
-    }
-
-    // If the above breaks, just use this:
-    // delayMicroseconds(((100 * INTENSITY_SCALE) - cycle_time));
+    delayMicroseconds(((100 * INTENSITY_SCALE) - cycle_time));
   }
 }
 
@@ -206,78 +189,63 @@ void loop(void) {
   if (motor == LEFT) {
     motor = 4;
     duration = 10 * 10000;
-    intensity = 64;
     runMotor();
   }
   else if (motor == RIGHT) {
      motor = 5;
      duration = 10 * 10000;
-     intensity = 64;
      runMotor();
   }
   else if (motor == UP) {
     motor = 2;
     duration = 10 * 10000;
-    intensity = 64;
     runMotor();
   }
   else if (motor == DOWN) {
      // STOP: 1s all 1s all
      motor = 3;
      duration = 10 * 10000;
-     intensity = 64;
      runMotor();
   }
   else if (motor == STEP_FORWARD) {
     motor = 3;
     duration = 5 * 10000;
-    intensity = 64;
     runMotor();
     digitalWriteAll(LOW);
     delay(100);
     motor = 2;
     duration = 10 * 10000;
-    intensity = 64;
     runMotor();
   }
   else if (motor == STEP_BACKWARD) {
      motor = 2;
      duration = 10 * 10000;
-     intensity = 64;
      runMotor();
      digitalWriteAll(LOW);
      delay(100);
      motor = 3;
      duration = 5 * 10000;
-     intensity = 64;
      runMotor();
   }
   else if (motor == STOP) {
     motor = 7;
     duration = 10 * 10000;
-    intensity = 64;
     runMotor();
   }
-  else if (motor == REACH_FORWARD) {
+  else if (motor == REACH_FORWARD && intensity > 26) {
      motor = 7;
-     duration = 10 * 10000;
-     intensity = 64;
+     duration = 5 * 10000;
      runMotor();
      digitalWriteAll(LOW);
-     delay(100);
+     delay(50);
      motor = 7;
-     duration = 10 * 10000;
-     intensity = 64;
+     duration = 5 * 10000;
      runMotor();
      digitalWriteAll(LOW);
-     delay(100);
+     delay(50);
      motor = 7;
-     duration = 10 * 10000;
-     intensity = 64;
+     duration = 5 * 10000;
      runMotor();
-  }
-  else if (motor != 0) {
-    runMotor();
   }
 
   // Make sure every motor is off
